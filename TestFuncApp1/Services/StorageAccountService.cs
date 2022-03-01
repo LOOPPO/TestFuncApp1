@@ -22,15 +22,39 @@ namespace TestFuncApp1.Services
         {
             TableEntity entity = new TableEntity();
 
-            entity.PartitionKey = user.UserName;
-            entity.RowKey = user.UserSurname;
+            entity.PartitionKey = user.Mail;
+            entity.RowKey = user.GUID;
+            entity["Name"] = user.Name;
+            entity["Surname"] = user.Surname;
+            entity["Age"] = user.Age;
+            entity["Sex"] = user.Sex;
+            entity["Country"] = user.Country;
+
 
             this.tabellautenti.UpsertEntity(entity);
         }
-
-        public void RemoveUser(string partitionKey, string rowKey)
+        public void readAll()
         {
-            this.tabellautenti.DeleteEntity(partitionKey, rowKey);
+            Pageable<TableEntity> queryResultsFilter = tabellautenti.Query<TableEntity>();
+
+            foreach (TableEntity qEntity in queryResultsFilter)
+            {
+                Console.WriteLine($"{qEntity.GetString("Name")}: {qEntity.GetString("Surname")}: {qEntity.GetString("Age")}: {qEntity.GetString("Sex")}");
+            }
+
+            Console.WriteLine($"The query returned {queryResultsFilter.Count()} entities.");
+        }
+
+        public void readCountry(string country)
+        {
+            Pageable<TableEntity> queryResultsFilter = tabellautenti.Query<TableEntity>(filter: $"PartitionKey eq '{country}'");
+
+            foreach (TableEntity qEntity in queryResultsFilter)
+            {
+                Console.WriteLine($"{qEntity.GetString("Name")}: {qEntity.GetString("Surname")}: {qEntity.GetString("Age")}: {qEntity.GetString("Sex")}");
+            }
+
+            Console.WriteLine($"The query returned {queryResultsFilter.Count()} entities.");
         }
     }
 }
