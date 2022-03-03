@@ -11,17 +11,17 @@ using TestFuncApp1.Services;
 
 namespace TestFuncApp1
 {
-    public class Function1
+    public class PostUserFunc
     {
         readonly StorageAccountService service;
 
-        public Function1(StorageAccountService service) {
+        public PostUserFunc(StorageAccountService service) {
            this.service=service;
         }
 
-        [FunctionName("Function1")]
+        [FunctionName("PostUserFunc")]
         public async Task<IActionResult> RunGet(
-            [HttpTrigger(AuthorizationLevel.Function, "get", "post","view", Route = null)] HttpRequest req,
+            [HttpTrigger(AuthorizationLevel.Function,"put", "post", Route = null)] HttpRequest req,
             ILogger log)
         {
             log.LogInformation($"C# HTTP trigger function processed a {req.Method}.");
@@ -34,24 +34,14 @@ namespace TestFuncApp1
 
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
             dynamic data = JsonConvert.DeserializeObject(requestBody);
+            mail = mail ?? data?.Mail;
             name = name ?? data?.Name;
             surname = surname ?? data?.Surname;
             age = age ?? data?.Age;
             country = country ?? data?.Country;
             sex = sex ?? data?.Sex;    
-            mail= mail ?? data?.Mail;
             
-
-            if(req.Method == "GET")
-            {
-                log.LogInformation("C# HTTP trigger function processed a get.");
-                this.service.readCountry(country);
-            }
-            else if(req.Method == "VIEW")
-            {
-                this.service.readAll();
-            }
-            else if (req.Method == "POST")
+            if (req.Method == "POST")
             {
                 var model = new UserModel();
                 model.Country = country;
@@ -60,13 +50,27 @@ namespace TestFuncApp1
                 model.Surname = surname;
                 model.Age = age;
                 model.Sex = sex;
-                this.service.UpsertExpandableData(model);
+                model.Mail = mail;
+                this.service.AddExpandableData(model);
                 log.LogInformation("C# HTTP trigger function processed a post.");
+            }
+            else if(req.Method == "PUT")
+            {
+                var model = new UserModel();
+                model.Country = country;
+                model.GUID = Guid.NewGuid().ToString();
+                model.Name = name;
+                model.Surname = surname;
+                model.Age = age;
+                model.Sex = sex;
+                model.Mail = mail;
+                this.service.UpsertExpandableData(model);
+                log.LogInformation("C# HTTP trigger function processed a put.");
             }
             
             string responseMessage = string.IsNullOrEmpty(name)
                 ? "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response."
-                : $"Hello, {name},{surname},{age} from {country}. This HTTP triggered function executed successfully."; 
+                : $"Hello, {name}, {surname}, {age} from {country}. This HTTP triggered function executed successfully."; 
             
 
             return new OkObjectResult(responseMessage);

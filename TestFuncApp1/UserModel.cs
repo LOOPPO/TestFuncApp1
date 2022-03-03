@@ -11,13 +11,12 @@ namespace TestFuncApp1
     {
         public Dictionary<string, object> _properties = new Dictionary<string, object>();
 
-        public string Country { get; set; }  
-        
-        public string Mail { get; set; }    
+        public string Country { get; set; }      
         public string GUID { get; set; }
         public string Name { get; set; }
         public string Surname { get; set; }
 
+        public string Mail { get; set; }
         public string Sex { get; set; }
         public string Age { get; set; } 
     
