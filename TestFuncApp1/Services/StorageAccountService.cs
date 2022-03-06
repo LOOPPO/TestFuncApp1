@@ -12,17 +12,19 @@ namespace TestFuncApp1.Services
     public class StorageAccountService
     {
         readonly TableClient tabellautenti;
+        public string[] EXCLUDE_TABLE_ENTITY_KEYS = { "PartitionKey", "RowKey", "odata.etag", "Timestamp" };
+
         public StorageAccountService(IConfiguration config)
         {
             var section = config.GetSection("ConnectionStrings");
             this.tabellautenti = new TableClient(section.GetValue<string>("CosmosTableApi"), section.GetValue<string>("usertable"));
         
         }
-        public void AddExpandableData(UserModel user)
+        public string AddData(UserModel user)
         {
             TableEntity entity = new TableEntity();
 
-            entity.PartitionKey = user.Country;
+            entity.PartitionKey = "users";
             entity.RowKey = user.Mail;
             entity["Name"] = user.Name;
             entity["Surname"] = user.Surname;
@@ -30,14 +32,20 @@ namespace TestFuncApp1.Services
             entity["Sex"] = user.Sex;
             entity["Country"] = user.Country;
 
-
-            this.tabellautenti.AddEntity(entity);
+            try
+            {
+                return this.tabellautenti.AddEntity(entity).Status.ToString();
+            }catch (RequestFailedException ex)
+            {
+                return ex.Status.ToString();
+                throw new RequestFailedException(ex.Message);
+            }
         }
-        public void UpsertExpandableData(UserModel user)
+        public string UpdateData(UserModel user)
         {
             TableEntity entity = new TableEntity();
 
-            entity.PartitionKey = user.Country;
+            entity.PartitionKey = "users";
             entity.RowKey = user.Mail;
             entity["Name"] = user.Name;
             entity["Surname"] = user.Surname;
@@ -45,35 +53,46 @@ namespace TestFuncApp1.Services
             entity["Sex"] = user.Sex;
             entity["Country"] = user.Country;
 
-
-            this.tabellautenti.UpsertEntity(entity);
-        }
-        public void readAll()
-        {
-            Pageable<TableEntity> queryResultsFilter = tabellautenti.Query<TableEntity>();
-
-            foreach (TableEntity qEntity in queryResultsFilter)
+            try
             {
-                Console.WriteLine($"{qEntity.GetString("Name")}: {qEntity.GetString("Surname")}: {qEntity.GetString("Age")}: {qEntity.GetString("Sex")}");
-            }
-
-            Console.WriteLine($"The query returned {queryResultsFilter.Count()} entities.");
-        }
-
-        public void readRowKey(string rowkey)
-        {
-            Pageable<TableEntity> queryResultsFilter = tabellautenti.Query<TableEntity>(filter: $"RowKey eq '{rowkey}'");
-
-            foreach (TableEntity qEntity in queryResultsFilter)
+                return this.tabellautenti.UpdateEntity(entity,ETag.All,TableUpdateMode.Merge).Status.ToString();
+            }catch(RequestFailedException ex)
             {
-                Console.WriteLine($"Name: {qEntity.GetString("Name")}, Surname: {qEntity.GetString("Surname")}, Age: {qEntity.GetString("Age")}, Sex: {qEntity.GetString("Sex")}, Country: {qEntity.GetString("Country")}");
+                return ex.Status.ToString();
+                throw new RequestFailedException(ex.Message);
             }
-
-            Console.WriteLine($"The query returned {queryResultsFilter.Count()} entities.");
         }
-        public void RemoveEntity(string partitionKey, string rowKey)
+        public UserModel MapTableEntityToUserModel(TableEntity entity)
         {
-            this.tabellautenti.DeleteEntity(partitionKey, rowKey);
+            UserModel user = new UserModel();
+            var values = entity.Keys;
+            foreach (var key in values)
+            {
+                user[key] = entity[key];
+            }
+            return user;
+        }
+        public IEnumerable<UserModel> ReadData(string partitionkey,string rowkey)
+        { 
+                Pageable<TableEntity> queryResultsFilter = tabellautenti.Query<TableEntity>(filter: $"(PartitionKey eq '{partitionkey}') and (RowKey eq '{rowkey}')");
+            
+                foreach (TableEntity qEntity in queryResultsFilter)
+                {
+                    Console.WriteLine($"Name: {qEntity.GetString("Name")}, Surname: {qEntity.GetString("Surname")}, Age: {qEntity.GetString("Age")}, Sex: {qEntity.GetString("Sex")}, Country: {qEntity.GetString("Country")}");
+                }
+                return queryResultsFilter.Select(e => MapTableEntityToUserModel(e));
+  
+        }
+        public string RemoveData(string partitionkey,string rowKey)
+        {
+            try
+            {
+                return this.tabellautenti.DeleteEntity(partitionkey, rowKey).Status.ToString();
+            }catch(RequestFailedException ex)
+            {
+                return ex.Status.ToString();
+                throw new RequestFailedException(ex.Message);
+            }
         }
     }
 }

@@ -21,9 +21,10 @@ namespace TestFuncApp1
 
         [FunctionName("PostUserFunc")]
         public async Task<IActionResult> RunGet(
-            [HttpTrigger(AuthorizationLevel.Function,"put", "post", Route = null)] HttpRequest req,
+            [HttpTrigger(AuthorizationLevel.Function, Route = null)] HttpRequest req,
             ILogger log)
         {
+            string responseMessage;
             log.LogInformation($"C# HTTP trigger function processed a {req.Method}.");
             string name = req.Query["Name"];
             string surname = req.Query["Surname"];
@@ -39,8 +40,8 @@ namespace TestFuncApp1
             surname = surname ?? data?.Surname;
             age = age ?? data?.Age;
             country = country ?? data?.Country;
-            sex = sex ?? data?.Sex;    
-            
+            sex = sex ?? data?.Sex;
+
             if (req.Method == "POST")
             {
                 var model = new UserModel();
@@ -51,10 +52,12 @@ namespace TestFuncApp1
                 model.Age = age;
                 model.Sex = sex;
                 model.Mail = mail;
-                this.service.AddExpandableData(model);
-                log.LogInformation("C# HTTP trigger function processed a post.");
+                string response = this.service.AddData(model);
+                log.LogInformation(response);
+                responseMessage = $"STATUS CODE : {response}";
+
             }
-            else if(req.Method == "PUT")
+            else if (req.Method == "PUT")
             {
                 var model = new UserModel();
                 model.Country = country;
@@ -64,13 +67,14 @@ namespace TestFuncApp1
                 model.Age = age;
                 model.Sex = sex;
                 model.Mail = mail;
-                this.service.UpsertExpandableData(model);
-                log.LogInformation("C# HTTP trigger function processed a put.");
+                string response = this.service.UpdateData(model);
+                log.LogInformation(response);
+                responseMessage = $"STATUS CODE : {response}";
             }
-            
-            string responseMessage = string.IsNullOrEmpty(name)
-                ? "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response."
-                : $"Hello, {name}, {surname}, {age} from {country}. This HTTP triggered function executed successfully."; 
+            else {
+
+                responseMessage = $"400 BAD REQUEST";
+            }
             
 
             return new OkObjectResult(responseMessage);

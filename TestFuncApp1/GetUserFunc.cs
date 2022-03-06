@@ -21,29 +21,32 @@ namespace TestFuncApp1
         }
         [FunctionName("GetUserFunc")]
         public async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "get","delete", Route = "{users}/{iduser}")] HttpRequest req,string users,
+            [HttpTrigger(AuthorizationLevel.Function, Route = "users/{iduser}")] HttpRequest req,
             string iduser,
             ILogger log)
         {
-            log.LogInformation("C# HTTP trigger function processed a request.");
-
-            string name = req.Query["name"];
-
+            string responseMessage;
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
             dynamic data = JsonConvert.DeserializeObject(requestBody);
-            name = name ?? data?.name;
 
             if(req.Method == "GET")
             {
-                log.LogInformation("C# HTTP trigger function processed a get.");
-                this.service.readRowKey(iduser);
+                this.service.ReadData("users", iduser);
+                responseMessage = $"Name : , Surname : ";
+                responseMessage = "STATUS CODE : 204";
+                    
             }
             else if(req.Method == "DELETE")
             {
-                this.service.RemoveEntity(users, iduser);
-            }
+                string response = this.service.RemoveData("users", iduser);
+                log.LogInformation(response);
+                responseMessage = $"STATUS CODE : {response}";
 
-            string responseMessage = $"Hello, Admin. This HTTP triggered function executed successfully.";
+            }
+            else
+            {
+                responseMessage = $"BAD REQUEST STATUS CODE : 400";
+            }
             return new OkObjectResult(responseMessage);
         }
     }
