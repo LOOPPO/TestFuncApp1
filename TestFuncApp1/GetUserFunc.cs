@@ -32,8 +32,8 @@ namespace TestFuncApp1
             if(req.Method == "GET")
             {
                 this.service.ReadData("users", iduser);
-                responseMessage = $"Name : , Surname : ";
-                responseMessage = "STATUS CODE : 204";
+                responseMessage = $"Name :  , Surname : ";
+                responseMessage = "STATUS CODE : CODY";
                     
             }
             else if(req.Method == "DELETE")

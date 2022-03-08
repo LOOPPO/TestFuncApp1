@@ -12,12 +12,11 @@ namespace TestFuncApp1.Services
     public class StorageAccountService
     {
         readonly TableClient tabellautenti;
-        public string[] EXCLUDE_TABLE_ENTITY_KEYS = { "PartitionKey", "RowKey", "odata.etag", "Timestamp" };
 
         public StorageAccountService(IConfiguration config)
         {
             var section = config.GetSection("ConnectionStrings");
-            this.tabellautenti = new TableClient(section.GetValue<string>("CosmosTableApi"), section.GetValue<string>("usertable"));
+            this.tabellautenti = new TableClient(section.GetValue<string>("APIString"), section.GetValue<string>("usertable"));
         
         }
         public string AddData(UserModel user)
